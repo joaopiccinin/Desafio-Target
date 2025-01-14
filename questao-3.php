@@ -1,17 +1,37 @@
 <?php
-$data = json_decode(file_get_contents('faturamento.json'), true);
-$revenues = $data['daily_revenues'];
+$json = file_get_contents('dados.json');
 
-$valid_revenues = array_filter($revenues, fn($revenue) => $revenue > 0);
+$data = json_decode($json, true);
 
-$min_revenue = min($valid_revenues);
-$max_revenue = max($valid_revenues);
+$valid_revenues = [];
+$min_revenue = PHP_FLOAT_MAX;
+$max_revenue = PHP_FLOAT_MIN;
+$total_revenue = 0;
 
-$average = array_sum($valid_revenues) / count($valid_revenues);
+foreach ($data as $day) {
+    $revenue = $day['valor'];
+    if ($revenue > 0) {
+        $valid_revenues[] = $revenue;
+        if ($revenue < $min_revenue) {
+            $min_revenue = $revenue;
+        }
+        if ($revenue > $max_revenue) {
+            $max_revenue = $revenue;
+        }
+        $total_revenue += $revenue;
+    }
+}
 
-$days_above_average = count(array_filter($valid_revenues, fn($revenue) => $revenue > $average));
+$average_revenue = $total_revenue / count($valid_revenues);
 
-echo "Lowest revenue: {$min_revenue}\n";
-echo "Highest revenue: {$max_revenue}\n";
-echo "Days with revenue above average: {$days_above_average}\n";
+$days_above_average = 0;
+foreach ($valid_revenues as $revenue) {
+    if ($revenue > $average_revenue) {
+        $days_above_average++;
+    }
+}
+
+echo "Minimum revenue: R$" . number_format($min_revenue, 2, ',', '.') . "\n";
+echo "Maximum revenue: R$" . number_format($max_revenue, 2, ',', '.') . "\n";
+echo "Number of days with revenue above the average: " . $days_above_average . "\n";
 ?>
